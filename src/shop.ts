@@ -57,8 +57,8 @@ export async function searchProducts(opts: {
 
 export async function getCustomerOrders(
   customerId: number,
-  limit: number,
-  offset: number,
+  limit: number, //pageSize
+  offset: number, //page number
 ) {
   const { rows } = await pool.query(
     `SELECT order_id, status, created_at, order_total

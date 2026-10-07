@@ -67,6 +67,20 @@ app.post("/orders/:id/cancel", async (req, res, next) => {
   }
 });
 
+// GET /orders/:id
+app.get("/orders/:id", async (req, res, next) => {
+  try {
+    const orderId = Number(req.params.id);
+    const order = await getOrderSummary(orderId);
+    if (!order) {
+      return res.status(404).json({ error: "Order not found" });
+    }
+    res.json(order);
+  } catch (err) {
+    next(err);
+  }
+});
+
 // Translate Postgres errors into HTTP responses
 app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
   switch (err.code) {
