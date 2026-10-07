@@ -29,3 +29,11 @@ export async function getOrderSummary(orderId: number) {
   );
   return rows[0] ?? null;
 }
+
+export async function getCustomerSpending(customerId: number) {
+  const { rows } = await pool.query(
+    "SELECT * FROM customer_spending WHERE id = $1",
+    [customerId],
+  );
+  return rows;
+}
