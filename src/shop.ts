@@ -37,3 +37,40 @@ export async function getCustomerSpending(customerId: number) {
   );
   return rows;
 }
+
+export async function searchProducts(opts: {
+  q?: string;
+  limit: number;
+  afterId?: number;
+}) {
+  const { rows } = await pool.query(
+    `SELECT id, name, price, stock
+     FROM products
+     WHERE ($1::text IS NULL OR name ILIKE '%' || $1 || '%')
+       AND id > $2
+     ORDER BY id
+     LIMIT $3`,
+    [opts.q ?? null, opts.afterId ?? 0, opts.limit],
+  );
+  return rows;
+}
+
+export async function getCustomerOrders(
+  customerId: number,
+  limit: number,
+  offset: number,
+) {
+  const { rows } = await pool.query(
+    `SELECT order_id, status, created_at, order_total
+     FROM order_summary
+     WHERE customer_id = $1
+     ORDER BY created_at DESC
+     LIMIT $2 OFFSET $3`,
+    [customerId, limit, offset],
+  );
+  return rows;
+}
+
+export async function cancelOrder(orderId: number) {
+  await pool.query("SELECT cancel_order($1)", [orderId]);
+}
