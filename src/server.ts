@@ -5,6 +5,7 @@ import {
   getOrderSummary,
   getCustomerOrders,
   cancelOrder,
+  getOrderItems,
 } from "./shop";
 
 const app = express();
@@ -71,11 +72,15 @@ app.post("/orders/:id/cancel", async (req, res, next) => {
 app.get("/orders/:id", async (req, res, next) => {
   try {
     const orderId = Number(req.params.id);
+    if (!Number.isInteger(orderId) || orderId <= 0) {
+      return res.status(400).json({ error: "Invalid order ID" });
+    }
     const order = await getOrderSummary(orderId);
     if (!order) {
       return res.status(404).json({ error: "Order not found" });
     }
-    res.json(order);
+    const items = await getOrderItems(orderId);
+    res.json({ ...order, items });
   } catch (err) {
     next(err);
   }

@@ -74,3 +74,16 @@ export async function getCustomerOrders(
 export async function cancelOrder(orderId: number) {
   await pool.query("SELECT cancel_order($1)", [orderId]);
 }
+
+export async function getOrderItems(orderId: number) {
+  const { rows } = await pool.query(
+    `SELECT p.id AS product_id, p.name, oi.quantity, oi.unit_price,
+            oi.quantity * oi.unit_price AS line_total
+     FROM order_items oi
+     JOIN products p ON p.id = oi.product_id
+     WHERE oi.order_id = $1
+     ORDER BY p.name`,
+    [orderId],
+  );
+  return rows;
+}
