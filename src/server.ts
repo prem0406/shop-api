@@ -6,6 +6,8 @@ import {
   getCustomerOrders,
   cancelOrder,
   getOrderItems,
+  payOrder,
+  getOrderHistory,
 } from "./shop";
 
 const app = express();
@@ -86,11 +88,47 @@ app.get("/orders/:id", async (req, res, next) => {
   }
 });
 
+app.post("/orders/:id/pay", async (req, res, next) => {
+  try {
+    const orderId = Number(req.params.id);
+    if (!Number.isInteger(orderId) || orderId <= 0) {
+      return res.status(400).json({ error: "Invalid order ID" });
+    }
+
+    const method = req.body?.method;
+    if (!["card", "upi", "cod"].includes(method)) {
+      return res.status(400).json({ error: "method must be card, upi or cod" });
+    }
+    const paymentId = await payOrder(orderId, method);
+    res.json({ paymentId });
+  } catch (err) {
+    next(err);
+  }
+});
+
+app.get("/orders/:id/history", async (req, res, next) => {
+  try {
+    const orderId = Number(req.params.id);
+    if (!Number.isInteger(orderId) || orderId <= 0) {
+      return res.status(400).json({ error: "Invalid order ID" });
+    }
+    const history = await getOrderHistory(orderId);
+    if (history.length === 0) {
+      return res.status(404).json({ error: "Order not found" });
+    }
+    res.json({ orderId, history });
+  } catch (err) {
+    next(err);
+  }
+});
+
 // Translate Postgres errors into HTTP responses
 app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
   switch (err.code) {
     case "P0001": // RAISE EXCEPTION in our functions
       return res.status(409).json({ error: err.message });
+    case "P0002":
+      return res.status(404).json({ error: err.message });
     case "23503": // foreign key violation (e.g. unknown customer)
       return res.status(404).json({ error: "Referenced record not found" });
     case "23505": // unique violation

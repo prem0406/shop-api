@@ -87,3 +87,18 @@ export async function getOrderItems(orderId: number) {
   );
   return rows;
 }
+
+export async function payOrder(orderId: number, method: string) {
+  await pool.query("SELECT pay_order($1, $2)", [orderId, method]);
+}
+
+export async function getOrderHistory(orderId: number) {
+  const { rows } = await pool.query(
+    `SELECT *
+     FROM order_status_history
+     WHERE order_id = $1
+     ORDER BY changed_at DESC, id`,
+    [orderId],
+  );
+  return rows;
+}
