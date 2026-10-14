@@ -19,7 +19,15 @@ app.get("/products", async (req, res, next) => {
     const limit = Math.min(Number(req.query.limit) || 10, 50);
     const afterId = Number(req.query.afterId) || 0;
     const q = typeof req.query.q === "string" ? req.query.q : undefined;
-    const products = await searchProducts({ q, limit, afterId });
+    let attrs: object | undefined;
+    if (typeof req.query.attrs === "string") {
+      try {
+        attrs = JSON.parse(req.query.attrs);
+      } catch {
+        return res.status(400).json({ error: "attrs must be valid JSON" });
+      }
+    }
+    const products = await searchProducts({ q, limit, afterId, attrs });
     const nextAfterId =
       products.length === limit ? products[products.length - 1].id : null;
     res.json({ products, nextAfterId });

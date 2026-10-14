@@ -42,15 +42,22 @@ export async function searchProducts(opts: {
   q?: string;
   limit: number;
   afterId?: number;
+  attrs?: object;
 }) {
   const { rows } = await pool.query(
-    `SELECT id, name, price, stock
+    `SELECT id, name, price, stock, attributes
      FROM products
      WHERE ($1::text IS NULL OR name ILIKE '%' || $1 || '%')
        AND id > $2
+       AND ($4::jsonb IS NULL OR attributes @> $4::jsonb)
      ORDER BY id
      LIMIT $3`,
-    [opts.q ?? null, opts.afterId ?? 0, opts.limit],
+    [
+      opts.q ?? null,
+      opts.afterId ?? 0,
+      opts.limit,
+      opts.attrs ? JSON.stringify(opts.attrs) : null,
+    ],
   );
   return rows;
 }
