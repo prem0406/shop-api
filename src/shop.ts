@@ -62,6 +62,23 @@ export async function searchProducts(opts: {
   return rows;
 }
 
+export async function searchProductsText(opts: {
+  q: string;
+  limit: number;
+  offset: number;
+}) {
+  const { rows } = await pool.query(
+    `SELECT p.id, p.name, p.price, p.stock, p.attributes,
+            ts_rank(p.search_vector, q) AS rank
+     FROM products p, websearch_to_tsquery('english', $1) AS q
+     WHERE p.search_vector @@ q
+     ORDER BY rank DESC, p.id
+     LIMIT $2 OFFSET $3`,
+    [opts.q, opts.limit, opts.offset],
+  );
+  return rows;
+}
+
 export async function getCustomerOrders(
   customerId: number,
   limit: number, //pageSize

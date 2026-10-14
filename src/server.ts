@@ -8,6 +8,7 @@ import {
   getOrderItems,
   payOrder,
   getOrderHistory,
+  searchProductsText,
 } from "./shop";
 
 const app = express();
@@ -31,6 +32,26 @@ app.get("/products", async (req, res, next) => {
     const nextAfterId =
       products.length === limit ? products[products.length - 1].id : null;
     res.json({ products, nextAfterId });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /search?q=wireless mouse&page=1&pageSize=10
+app.get("/search", async (req, res, next) => {
+  try {
+    const q = typeof req.query.q === "string" ? req.query.q.trim() : "";
+    if (!q) {
+      return res.status(400).json({ error: "q is required" });
+    }
+    const pageSize = Math.min(Number(req.query.pageSize) || 10, 50);
+    const page = Math.max(Number(req.query.page) || 1, 1);
+    const results = await searchProductsText({
+      q,
+      limit: pageSize,
+      offset: (page - 1) * pageSize,
+    });
+    res.json({ q, page, pageSize, results });
   } catch (err) {
     next(err);
   }
