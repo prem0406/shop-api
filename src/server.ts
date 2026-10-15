@@ -72,8 +72,8 @@ app.post("/orders", async (req, res, next) => {
     if (key !== undefined && !uuidRe.test(key)) {
       return res.status(400).json({ error: "Idempotency-Key must be a UUID" });
     }
-    const orderId = await placeOrder(customerId, items, key);
-    res.status(201).json(await getOrderSummary(orderId));
+    const { orderId, created } = await placeOrder(customerId, items, key);
+    res.status(created ? 201 : 200).json(await getOrderSummary(orderId));
   } catch (err) {
     next(err);
   }
@@ -164,6 +164,8 @@ app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
       return res.status(409).json({ error: err.message });
     case "P0002":
       return res.status(404).json({ error: err.message });
+    case "P0003":
+      return res.status(422).json({ error: err.message });
     case "23503": // foreign key violation (e.g. unknown customer)
       return res.status(404).json({ error: "Referenced record not found" });
     case "23505": // unique violation

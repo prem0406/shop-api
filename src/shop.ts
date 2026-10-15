@@ -19,11 +19,15 @@ export async function placeOrder(
     quantity: i.quantity,
   }));
 
-  const { rows } = await pool.query<{ order_id: number }>(
-    "SELECT place_order($1, $2::jsonb, $3::uuid) AS order_id",
-    [customerId, JSON.stringify(payload), idempotencyKey ?? null],
-  );
-  return rows[0].order_id;
+  const { rows } = await pool.query<{
+    out_order_id: number;
+    out_created: boolean;
+  }>("SELECT * FROM place_order($1, $2::jsonb, $3::uuid)", [
+    customerId,
+    JSON.stringify(payload),
+    idempotencyKey ?? null,
+  ]);
+  return { orderId: rows[0].out_order_id, created: rows[0].out_created };
 }
 
 export async function getOrderSummary(orderId: number) {
