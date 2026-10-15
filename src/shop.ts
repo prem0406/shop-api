@@ -9,15 +9,19 @@ export async function listProducts() {
   return rows;
 }
 
-export async function placeOrder(customerId: number, items: OrderItem[]) {
+export async function placeOrder(
+  customerId: number,
+  items: OrderItem[],
+  idempotencyKey?: string,
+) {
   const payload = items.map((i) => ({
     product_id: i.productId,
     quantity: i.quantity,
   }));
 
   const { rows } = await pool.query<{ order_id: number }>(
-    "SELECT place_order($1, $2::jsonb) AS order_id",
-    [customerId, JSON.stringify(payload)],
+    "SELECT place_order($1, $2::jsonb, $3::uuid) AS order_id",
+    [customerId, JSON.stringify(payload), idempotencyKey ?? null],
   );
   return rows[0].order_id;
 }

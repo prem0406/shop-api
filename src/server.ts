@@ -66,7 +66,13 @@ app.post("/orders", async (req, res, next) => {
         .status(400)
         .json({ error: "customerId and items are required" });
     }
-    const orderId = await placeOrder(customerId, items);
+    const key = req.header("Idempotency-Key");
+    const uuidRe =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (key !== undefined && !uuidRe.test(key)) {
+      return res.status(400).json({ error: "Idempotency-Key must be a UUID" });
+    }
+    const orderId = await placeOrder(customerId, items, key);
     res.status(201).json(await getOrderSummary(orderId));
   } catch (err) {
     next(err);
